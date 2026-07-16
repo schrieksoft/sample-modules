@@ -13,7 +13,3 @@ output "product_team_group_id" {
 output "security_team_group_id" {
   value = random_uuid.security_team_group_id.result
 }
-
-output "group_names" {
-  value = ["platform-team", "analytics-team", "product-team", "security-team"]
-}

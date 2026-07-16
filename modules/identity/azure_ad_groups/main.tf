@@ -13,10 +13,6 @@ resource "random_uuid" "platform_team_group_id" {
   depends_on = [time_sleep.settle]
 }
 
-resource "random_uuid" "data_team_group_id" {
-  depends_on = [time_sleep.settle]
-}
-
 resource "random_uuid" "analytics_team_group_id" {
   depends_on = [time_sleep.settle]
 }

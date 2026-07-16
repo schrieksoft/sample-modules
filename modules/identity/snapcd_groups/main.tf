@@ -9,18 +9,18 @@ resource "time_sleep" "settle" {
   destroy_duration = var.settle_seconds
 }
 
-resource "random_uuid" "azure_runner_id" {
+resource "random_uuid" "platform_team_group_id" {
   depends_on = [time_sleep.settle]
 }
 
-resource "random_uuid" "k8s_runner_id" {
+resource "random_uuid" "analytics_team_group_id" {
   depends_on = [time_sleep.settle]
 }
 
-resource "random_uuid" "analysis_runner_id" {
+resource "random_uuid" "product_team_group_id" {
   depends_on = [time_sleep.settle]
 }
 
-resource "random_uuid" "identity_runner_id" {
+resource "random_uuid" "security_team_group_id" {
   depends_on = [time_sleep.settle]
 }

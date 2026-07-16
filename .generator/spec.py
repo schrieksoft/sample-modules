@@ -16,10 +16,10 @@ SPEC = {
             "vars": {"tenant_id": "00000000-0000-0000-0000-000000000000"},
             "outputs": {
                 "platform_team_group_id": "uuid",
-                "data_team_group_id": "uuid",
                 "analytics_team_group_id": "uuid",
                 "product_team_group_id": "uuid",
                 "security_team_group_id": "uuid",
+                "group_names": "list:platform-team,analytics-team,product-team,security-team",
             },
         },
         "azure_service_principals": {
@@ -32,22 +32,33 @@ SPEC = {
                 "agent_sp_client_id": "uuid",
             },
         },
-        "snapcd_rbac": {
+        "azure_user_group_assignments": {
             "deps": {"from_azure_ad_groups": "identity/azure_ad_groups"},
             "vars": {},
             "outputs": {
-                "role_assignment_count": "str:12",
-                "managed_scopes": "list:stack:prod,namespace:prod/networking,namespace:prod/application",
+                "assignment_count": "str:14",
+                "assigned_upns": "list:karl@example.com,dev1@example.com,analyst1@example.com",
             },
         },
-        "snapcd_runners": {
-            "deps": {"from_azure_service_principals": "identity/azure_service_principals"},
+        "snapcd_groups": {
+            "deps": {"from_azure_ad_groups": "identity/azure_ad_groups"},
             "vars": {},
             "outputs": {
-                "azure_runner_id": "uuid",
-                "k8s_runner_id": "uuid",
-                "analysis_runner_id": "uuid",
-                "identity_runner_id": "uuid",
+                "platform_team_group_id": "uuid",
+                "analytics_team_group_id": "uuid",
+                "product_team_group_id": "uuid",
+                "security_team_group_id": "uuid",
+            },
+        },
+        "snapcd_user_group_assignments": {
+            "deps": {
+                "from_snapcd_groups": "identity/snapcd_groups",
+                "from_azure_user_group_assignments": "identity/azure_user_group_assignments",
+            },
+            "vars": {},
+            "outputs": {
+                "member_count": "str:14",
+                "managed_groups": "list:platform-team,analytics-team,product-team,security-team",
             },
         },
     },

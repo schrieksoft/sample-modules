@@ -16,10 +16,10 @@ variable "organization_id" {
 }
 
 variable "snapcd_server_url" {
-  // default = "http://localhost:5000"
+  default = "https://localhost:20002" // "http://localhost:5000"
   // How you reach the Server from where you run `terraform apply`.
   // - snapcd-deployment-docker:      "http://localhost:5000"
-  - SnapCd.Server.Host (C# proj):  "https://localhost:20002"
+  // - SnapCd.Server.Host (C# proj):  "https://localhost:20002"
   // - SaaS:                          "https://snapcd.io"
 }
 

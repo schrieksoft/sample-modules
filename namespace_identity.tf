@@ -58,40 +58,66 @@ resource "snapcd_module_input_from_output_set" "identity_azure_service_principal
   output_module_id = snapcd_module.identity_azure_ad_groups.id
 }
 
-// ── identity/snapcd_rbac ──
+// ── identity/azure_user_group_assignments ──
 
-resource "snapcd_module" "identity_snapcd_rbac" {
+resource "snapcd_module" "identity_azure_user_group_assignments" {
   depends_on          = [snapcd_runner_namespace_supply.identity]
-  name                = "snapcd_rbac"
+  name                = "azure_user_group_assignments"
   namespace_id        = snapcd_namespace.identity.id
   source_url          = var.source_url
   source_revision     = var.source_revision
-  source_subdirectory = "modules/identity/snapcd_rbac"
+  source_subdirectory = "modules/identity/azure_user_group_assignments"
   runner_id           = data.snapcd_runner.identity.id
 }
 
-resource "snapcd_module_input_from_output_set" "identity_snapcd_rbac__from_azure_ad_groups" {
+resource "snapcd_module_input_from_output_set" "identity_azure_user_group_assignments__from_azure_ad_groups" {
   input_kind       = "Param"
-  module_id        = snapcd_module.identity_snapcd_rbac.id
+  module_id        = snapcd_module.identity_azure_user_group_assignments.id
   name             = "from_azure_ad_groups"
   output_module_id = snapcd_module.identity_azure_ad_groups.id
 }
 
-// ── identity/snapcd_runners ──
+// ── identity/snapcd_groups ──
 
-resource "snapcd_module" "identity_snapcd_runners" {
+resource "snapcd_module" "identity_snapcd_groups" {
   depends_on          = [snapcd_runner_namespace_supply.identity]
-  name                = "snapcd_runners"
+  name                = "snapcd_groups"
   namespace_id        = snapcd_namespace.identity.id
   source_url          = var.source_url
   source_revision     = var.source_revision
-  source_subdirectory = "modules/identity/snapcd_runners"
+  source_subdirectory = "modules/identity/snapcd_groups"
   runner_id           = data.snapcd_runner.identity.id
 }
 
-resource "snapcd_module_input_from_output_set" "identity_snapcd_runners__from_azure_service_principals" {
+resource "snapcd_module_input_from_output_set" "identity_snapcd_groups__from_azure_ad_groups" {
   input_kind       = "Param"
-  module_id        = snapcd_module.identity_snapcd_runners.id
-  name             = "from_azure_service_principals"
-  output_module_id = snapcd_module.identity_azure_service_principals.id
+  module_id        = snapcd_module.identity_snapcd_groups.id
+  name             = "from_azure_ad_groups"
+  output_module_id = snapcd_module.identity_azure_ad_groups.id
+}
+
+// ── identity/snapcd_user_group_assignments ──
+
+resource "snapcd_module" "identity_snapcd_user_group_assignments" {
+  depends_on          = [snapcd_runner_namespace_supply.identity]
+  name                = "snapcd_user_group_assignments"
+  namespace_id        = snapcd_namespace.identity.id
+  source_url          = var.source_url
+  source_revision     = var.source_revision
+  source_subdirectory = "modules/identity/snapcd_user_group_assignments"
+  runner_id           = data.snapcd_runner.identity.id
+}
+
+resource "snapcd_module_input_from_output_set" "identity_snapcd_user_group_assignments__from_azure_user_group_assignments" {
+  input_kind       = "Param"
+  module_id        = snapcd_module.identity_snapcd_user_group_assignments.id
+  name             = "from_azure_user_group_assignments"
+  output_module_id = snapcd_module.identity_azure_user_group_assignments.id
+}
+
+resource "snapcd_module_input_from_output_set" "identity_snapcd_user_group_assignments__from_snapcd_groups" {
+  input_kind       = "Param"
+  module_id        = snapcd_module.identity_snapcd_user_group_assignments.id
+  name             = "from_snapcd_groups"
+  output_module_id = snapcd_module.identity_snapcd_groups.id
 }

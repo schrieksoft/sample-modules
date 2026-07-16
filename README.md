@@ -1,6 +1,6 @@
 # sample-modules
 
-A **full mocked Snap CD stack** — 34 modules across 6 namespaces, with a real dependency
+A **full mocked Snap CD stack** — 35 modules across 6 namespaces, with a real dependency
 graph. Built for demos, screenshots and videos: big enough that the graph is the point,
 structured the way a real org would structure it, and safe to run anywhere.
 
@@ -36,7 +36,7 @@ That single resource is the whole dependency. `cluster` declares a `variable "fr
 `vpc` produces outputs; Snap CD matches them up, works out that `vpc` must apply first, and
 re-plans `cluster` whenever `vpc`'s outputs change.
 
-The result is **7 stages** deep. Changing `networking/vpc` cascades to **26 of the 34
+The result is **7 stages** deep. Changing `networking/vpc` cascades to **26 of the 35
 modules across 5 namespaces**, in the right order, in parallel where possible.
 
 ## Namespaces
@@ -45,7 +45,7 @@ Ownership boundaries, not layers — each maps to a team that could own a pager.
 
 | Namespace | Modules | Owns |
 |---|---|---|
-| `identity` | 4 | Azure AD groups, service principals, **Snap CD's own RBAC** |
+| `identity` | 5 | Azure AD groups + Snap CD groups, service principals, and **who is in which group — on both sides** |
 | `storage` | 7 | Resource groups, Key Vaults, storage accounts, state backend, and the shared database engines — SQL Server, Postgres, Redis |
 | `networking` | 5 | VNet, subnets, NSGs, private DNS, VPN, bastion |
 | `analytics` | 5 | Data lake, Databricks, warehouse, ETL pipelines |
@@ -62,8 +62,19 @@ belongs to the application.
 ETL that fills them. It reaches *into* `application/storefront_api_infra` to read the app's
 database, and nothing reaches back. One-way, which is what makes it a real boundary.
 
-`identity` is the interesting one: `azure_ad_groups` outputs a group ID, `snapcd_rbac`
-consumes it, and someone's Snap CD permissions change because a Terraform apply ran.
+`identity` is the interesting one. It manages group *membership* on both Azure AD and Snap
+CD, in one graph:
+
+```
+azure_ad_groups ──┬── azure_user_group_assignments ──┐
+                  │                                  ├── snapcd_user_group_assignments
+                  └── snapcd_groups ─────────────────┘
+```
+
+`snapcd_user_group_assignments` depends on both the Snap CD groups existing *and* the Azure
+side being settled — so onboarding someone is one apply, and their access to Snap CD and to
+Azure can't drift apart. Membership is its own module because it changes every time someone
+joins or leaves, which is a completely different cadence from the group definitions.
 
 Applications follow an `infra` → `app` couplet: `*_infra` provisions the Azure side —
 including the app's own database on the shared server — and outputs a *reference* to a Key
@@ -79,7 +90,7 @@ terraform init
 terraform apply
 ```
 
-Then open the Dashboard — the `prod` stack, its namespaces, and 34 modules will be there,
+Then open the Dashboard — the `prod` stack, its namespaces, and 35 modules will be there,
 planning in dependency order.
 
 Against a different Server:
@@ -137,9 +148,9 @@ if you want time to talk over a running job.
 
 - The modules and the `namespace_*.tf` wiring were generated from a single spec so the
   DAG in the Terraform can't drift from the DAG in the modules. Prefer regenerating over
-  hand-editing 34 directories.
+  hand-editing 35 directories.
 - Approval thresholds are set per namespace and get stricter as you go down the stack:
   `application` and `analytics` apply freely, `identity` needs two approvals. See
   `namespace_*.tf`.
-- The graph is acyclic and every dependency resolves — verified, along with all 34 modules
+- The graph is acyclic and every dependency resolves — verified, along with all 35 modules
   passing `terraform validate`.
