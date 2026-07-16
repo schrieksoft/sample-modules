@@ -7,13 +7,69 @@
 resource "snapcd_namespace" "identity" {
   name                               = "identity"
   stack_id                           = snapcd_stack.prod.id
-  default_apply_approval_threshold   = 2
-  default_destroy_approval_threshold = 2
+  default_apply_approval_threshold   = 0
+  default_destroy_approval_threshold = 0
 }
 
 resource "snapcd_runner_namespace_supply" "identity" {
   runner_id    = data.snapcd_runner.identity.id
   namespace_id = snapcd_namespace.identity.id
+}
+
+// ── state: Snap CD's built-in State Store, as the Terraform HTTP backend ──
+//
+// Every module in this namespace gets an `extra_root.tf` declaring the http backend,
+// plus the -backend-config flags pointing it at the State Store API. State is keyed by
+// <namespace>--<module> so two modules can share a name across namespaces without
+// colliding.
+
+resource "snapcd_namespace_extra_file" "identity_http_backend" {
+  file_name    = "extra_root.tf"
+  contents     = <<EOT
+terraform {
+  backend "http" {}
+}
+  EOT
+  namespace_id = snapcd_namespace.identity.id
+  overwrite    = false
+}
+
+resource "snapcd_namespace_terraform_flag" "identity_init_flags" {
+  for_each = toset(["Upgrade", "MigrateState"])
+
+  namespace_id = snapcd_namespace.identity.id
+  task         = "Init"
+  flag         = each.value
+}
+
+resource "snapcd_namespace_input_from_definition" "identity_state_key" {
+  for_each = {
+    SNAPCD_NAMESPACE_NAME = "NamespaceName"
+    SNAPCD_MODULE_NAME    = "ModuleName"
+  }
+
+  name            = each.key
+  definition_name = each.value
+  usage_mode      = "UseByDefault"
+  namespace_id    = snapcd_namespace.identity.id
+  input_kind      = "EnvVar"
+}
+
+resource "snapcd_namespace_terraform_array_flag" "identity_http_backend" {
+  for_each = {
+    address        = "${var.snapcd_server_url_from_runner}/api/state/${data.snapcd_state_store.default.id}/$${SNAPCD_NAMESPACE_NAME}--$${SNAPCD_MODULE_NAME}"
+    lock_address   = "${var.snapcd_server_url_from_runner}/api/state/${data.snapcd_state_store.default.id}/$${SNAPCD_NAMESPACE_NAME}--$${SNAPCD_MODULE_NAME}/lock"
+    unlock_address = "${var.snapcd_server_url_from_runner}/api/state/${data.snapcd_state_store.default.id}/$${SNAPCD_NAMESPACE_NAME}--$${SNAPCD_MODULE_NAME}/unlock"
+    lock_method    = "POST"
+    unlock_method  = "POST"
+    username       = "${var.organization_id}:$${SNAPCD_CLIENT_ID}"
+    password       = "$${SNAPCD_CLIENT_SECRET}"
+  }
+
+  namespace_id = snapcd_namespace.identity.id
+  task         = "Init"
+  flag         = "BackendConfig"
+  value        = "${each.key}=${each.value}"
 }
 
 // ── identity/azure_ad_groups ──

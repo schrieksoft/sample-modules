@@ -380,12 +380,16 @@ SPEC = {
 
 # Namespace-level config for the Snap CD wiring
 NAMESPACES = {
-    "identity":    {"runner": "identity", "apply": 2, "destroy": 2},
-    "storage":     {"runner": "azure",    "apply": 1, "destroy": 2},
-    "networking":  {"runner": "azure",    "apply": 1, "destroy": 2},
-    "analytics":   {"runner": "analytics", "apply": 0, "destroy": 1},
-    "platform":    {"runner": "k8s",      "apply": 1, "destroy": 2},
-    "application": {"runner": "k8s",      "apply": 0, "destroy": 1},
+    # Approvals are all 0 so the stack converges unattended — it is a demo fixture, and a
+    # gate that needs clicking 34 times is just friction. Turn them up per namespace when
+    # an episode needs to *show* an approval gate (full-mocked.md suggests a realistic
+    # spread: identity strictest, application/analytics freest).
+    "identity":    {"runner": "identity",  "apply": 0, "destroy": 0},
+    "storage":     {"runner": "azure",     "apply": 0, "destroy": 0},
+    "networking":  {"runner": "azure",     "apply": 0, "destroy": 0},
+    "analytics":   {"runner": "analytics", "apply": 0, "destroy": 0},
+    "platform":    {"runner": "k8s",       "apply": 0, "destroy": 0},
+    "application": {"runner": "k8s",       "apply": 0, "destroy": 0},
 }
 
 NS_ORDER = ["identity", "storage", "networking", "analytics", "platform", "application"]

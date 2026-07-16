@@ -5,7 +5,9 @@ graph. Built for demos, screenshots and videos: big enough that the graph is the
 structured the way a real org would structure it, and safe to run anywhere.
 
 Nothing here touches a cloud. Every module is `random_uuid` + `time_sleep`, producing
-plausible outputs and no side effects.
+plausible outputs and no side effects — and state goes in **Snap CD's built-in State
+Store**, so there is no storage account to provision either. Point it at a Server and
+`terraform apply`; that's the whole setup.
 
 ```
 .
@@ -83,7 +85,8 @@ Snap CD input and never enters state.
 
 ## Run it
 
-Defaults target `snapcd-deployment-docker` with a Runner named `default`.
+Defaults target a locally-run `SnapCd.Server.Host` on `https://localhost:20002`, with a
+Runner named `default`.
 
 ```bash
 terraform init
@@ -93,11 +96,19 @@ terraform apply
 Then open the Dashboard — the `prod` stack, its namespaces, and 35 modules will be there,
 planning in dependency order.
 
-Against a different Server:
+Against a different Server — note there are **two** URLs, and both need setting (see
+§ State for why):
 
 ```bash
+# snapcd-deployment-docker
+terraform apply \
+  -var snapcd_server_url=http://localhost:5000 \
+  -var snapcd_server_url_from_runner=http://snapcd-server:5000
+
+# SaaS
 terraform apply \
   -var snapcd_server_url=https://snapcd.io \
+  -var snapcd_server_url_from_runner=https://snapcd.io \
   -var insecure_skip_verify=false \
   -var organization_id=<your-org-guid> \
   -var client_id=<...> -var client_secret=<...>
@@ -118,6 +129,30 @@ terraform apply \
   -var analytics_runner_name=analytics-prod \
   -var identity_runner_name=identity-prod
 ```
+
+### State
+
+Every namespace wires its modules to Snap CD's built-in **State Store** (the `default` one
+every organization is pre-seeded with) as a standard Terraform `http` backend. Each
+namespace injects an `extra_root.tf` declaring the backend and passes the
+`-backend-config` flags at `init`; state is keyed `<namespace>--<module>`, so two modules
+sharing a name in different namespaces never collide.
+
+This means **no cloud storage is needed to run the sample** — the state lives in Snap CD,
+encrypted, and you can see it under System → State Stores.
+
+The variable that matters here is **`snapcd_server_url_from_runner`**, and it is not the
+same as `snapcd_server_url`. Terraform runs *inside the Runner*, so the backend URL has to
+resolve from **there**, not from wherever you typed `terraform apply`:
+
+| | `snapcd_server_url` | `snapcd_server_url_from_runner` |
+|---|---|---|
+| Local `SnapCd.Server.Host` | `https://localhost:20002` | `https://localhost:20002` |
+| `snapcd-deployment-docker` | `http://localhost:5000` | `http://snapcd-server:5000` |
+| SaaS | `https://snapcd.io` | `https://snapcd.io` |
+
+They only diverge when the Runner is containerised — which is exactly when getting it wrong
+is confusing, because `terraform apply` succeeds and the *jobs* then fail on `init`.
 
 ### Module source
 
@@ -149,8 +184,9 @@ if you want time to talk over a running job.
 - The modules and the `namespace_*.tf` wiring were generated from a single spec so the
   DAG in the Terraform can't drift from the DAG in the modules. Prefer regenerating over
   hand-editing 35 directories.
-- Approval thresholds are set per namespace and get stricter as you go down the stack:
-  `application` and `analytics` apply freely, `identity` needs two approvals. See
-  `namespace_*.tf`.
+- **Approval thresholds are all 0** — the stack converges unattended, which is what you
+  want from a demo fixture. Turn them up per namespace in `.generator/spec.py` when an
+  episode needs to *show* an approval gate; `full-mocked.md` § Approval thresholds has a
+  realistic spread to copy.
 - The graph is acyclic and every dependency resolves — verified, along with all 35 modules
   passing `terraform validate`.

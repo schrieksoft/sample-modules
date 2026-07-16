@@ -28,6 +28,16 @@ variable "insecure_skip_verify" {
   // false if the Server has a valid certificate (e.g. https://snapcd.io)
 }
 
+variable "snapcd_server_url_from_runner" {
+  default = "https://localhost:20002" // "http://snapcd-server:5000"
+  // How the RUNNER reaches the Server. Distinct from snapcd_server_url: Terraform runs
+  // inside the Runner, so the State Store backend URL must resolve from there — which is
+  // a different hostname whenever the Runner is containerised.
+  // - SnapCd.Server.Host (C# proj):  "https://localhost:20002"  (Runner on the same host)
+  // - snapcd-deployment-docker:      "http://snapcd-server:5000"
+  // - SaaS:                          "https://snapcd.io"
+}
+
 //// The stack
 
 variable "stack_name" {

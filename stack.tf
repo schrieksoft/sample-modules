@@ -16,6 +16,14 @@ resource "snapcd_stack" "prod" {
   name = var.stack_name
 }
 
+// Snap CD's built-in State Store. Every organization is pre-seeded with one named
+// "default": it provides encrypted, centrally managed Terraform state over an HTTP
+// backend, so this sample needs no cloud storage account to run. Each namespace wires
+// its modules to it — see namespace_*.tf.
+data "snapcd_state_store" "default" {
+  name = "default"
+}
+
 data "snapcd_runner" "azure" {
   name = var.azure_runner_name
 }
