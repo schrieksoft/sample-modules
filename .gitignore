@@ -1,0 +1,11 @@
+.terraform/
+.terraform.lock.hcl
+terraform.tfstate
+terraform.tfstate.backup
+*.tfplan
+
+# Python — the generator under .generator/
+__pycache__/
+*.py[cod]
+.venv/
+venv/
