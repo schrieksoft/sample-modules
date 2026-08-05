@@ -17,6 +17,3 @@ Then re-validate:
 terraform init -backend=false && terraform validate
 for d in modules/*/*/; do (cd "$d" && terraform init -backend=false >/dev/null && terraform validate >/dev/null) || echo "FAIL $d"; done
 ```
-
-The planning document behind the design is
-`support/snapcd-videos/samples/full-mocked.md` in the snapcd-all monorepo.
